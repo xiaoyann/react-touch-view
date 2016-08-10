@@ -52,9 +52,9 @@ class TouchView extends Component {
     });
 
     if (!this.gestureEvent.isMoved) {
-      let { longTapDuration, onTap, onLongTap } = this.props;
+      let { longTapThreshold, onTap, onLongTap } = this.props;
       let { touchStartTime, touchEndTime } = this.gestureEvent;
-      if (touchEndTime - touchStartTime >= longTapDuration) {
+      if (touchEndTime - touchStartTime >= longTapThreshold) {
         if (onLongTap) onLongTap(e);
       } else {
         if (onTap) onTap(e);
@@ -100,12 +100,13 @@ TouchView.propTypes = {
   onTap: PropTypes.func,
   onLongTap: PropTypes.func,
   children: PropTypes.element.isRequired,
-  moveThreshold: PropTypes.number
+  moveThreshold: PropTypes.number,
+  longTapThreshold: PropTypes.number
 };
 
 TouchView.defaultProps = {
   moveThreshold: 10,
-  longTapDuration: 600
+  longTapThreshold: 600
 };
 
 export default TouchView;
