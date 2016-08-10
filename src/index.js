@@ -5,40 +5,85 @@ class TouchView extends Component {
   constructor(props) {
     super(props);
 
-    // touch start time
-    this.startTime = 0;
-    // touch end time
-    this.endTime = 0;
-
-    // touch start pageX
-    this.startPageX = 0;
-    // touch start pageY
-    this.startPageY = 0;
+    this.initGestureEvent();
 
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
     this.onTouchMove = this.onTouchMove.bind(this);
   }
 
+  initGestureEvent() {
+    this.gestureEvent = {
+      touchStartTime: 0,
+      touchEndTime: 0,
+      touchStartPageX: 0,
+      touchStartPageY: 0,
+      touchEndPageX: 0,
+      touchEndPageY: 0,
+      touchMovePageX: 0,
+      touchMovePageY: 0,
+      isMoved: false
+    };
+  }
+
+  setGestureEvent(detail) {
+    for (let k in detail) {
+      this.gestureEvent[k] = detail[k];
+    }
+  }
+
   onTouchStart(e) {
     if (e.touches.length !== 1) return;
-    this.startTime = Date.now();
-    this.startPageX = e.touches[0].pageX;
-    this.startPageY = e.touches[0].pageY;
+    
+    this.setGestureEvent({
+      touchStartTime: Date.now(),
+      touchStartPageX: e.touches[0].pageX,
+      touchStartPageY: e.touches[0].pageY,
+    });
   }
 
   onTouchEnd(e) {
     if (e.changedTouches.length !== 1) return;
-    this.endTime = Date.now();
-    this.endPageX = e.changedTouches[0].pageX;
-    this.endPageY = e.changedTouches[0].pageY;
-    // if (true && this.props.onTap) {
-    //   this.props.onTap(e);
-    // }
+    
+    this.setGestureEvent({
+      touchEndTime: Date.now(),
+      touchEndPageX: e.changedTouches[0].pageX,
+      touchEndPageY: e.changedTouches[0].pageY
+    });
+
+    if (!this.gestureEvent.isMoved) {
+      let { longTapDuration, onTap, onLongTap } = this.props;
+      let { touchStartTime, touchEndTime } = this.gestureEvent;
+      if (touchEndTime - touchStartTime >= longTapDuration) {
+        if (onLongTap) onLongTap(e);
+      } else {
+        if (onTap) onTap(e);
+      }
+    }
+    
+    this.initGestureEvent();
   }
 
   onTouchMove(e) {
-    if (e.changedTouches.length !== 1) return;
+    if (e.touches.length !== 1) return;
+
+    let { moveThreshold } = this.props;
+    let { 
+      touchStartPageX, touchStartPageY,
+      touchMovePageX, touchMovePageY, isMoved
+    } = this.gestureEvent;
+
+    if (isMoved === false) {
+      let disX = Math.abs(touchMovePageX - touchStartPageX);
+      let disY = Math.abs(touchMovePageY - touchStartPageY);
+      isMoved = disX > moveThreshold || disY > moveThreshold;
+    }
+
+    this.setGestureEvent({
+      isMoved: isMoved,
+      touchMovePageX: e.touches[0].pageX,
+      touchMovePageY: e.touches[0].pageY
+    });
   }
 
   render() {
@@ -52,7 +97,15 @@ class TouchView extends Component {
 }
 
 TouchView.propTypes = {
-  children: PropTypes.element.isRequired
+  onTap: PropTypes.func,
+  onLongTap: PropTypes.func,
+  children: PropTypes.element.isRequired,
+  moveThreshold: PropTypes.number
+};
+
+TouchView.defaultProps = {
+  moveThreshold: 10,
+  longTapDuration: 600
 };
 
 export default TouchView;
